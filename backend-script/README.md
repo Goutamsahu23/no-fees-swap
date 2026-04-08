@@ -15,8 +15,12 @@ Monitors the Anvil mempool for pending NoFeeSwap swap transactions, decodes thei
 # 1. Install dependencies
 npm install
 
-# 2. Copy .env and verify addresses match your deployment
-#    (defaults are pre-filled from the standard Anvil deploy)
+# 2. Generate .env from deployment JSONs (same sources as the UI)
+npm run env:print
+npm run env:write
+
+# Optional: use a custom attacker key when generating (Unix)
+# ATTACKER_PRIVATE_KEY=0x... npm run env:write
 
 # 3. Run the one-time setup (disables auto-mine, funds attacker with tokens)
 npm run setup
@@ -27,6 +31,8 @@ npm run dev
 # 5. Open the UI (http://localhost:3000), connect MetaMask, and submit a swap.
 #    The bot will detect it in the mempool and execute a sandwich.
 ```
+
+Manual alternative: copy **`.env.example`** to **`.env`** and fill addresses from `../core/deployments/` and `../operator/deployments/`.
 
 ## How It Works
 
@@ -74,12 +80,20 @@ src/
 
 ## Environment Variables
 
+Generate from deployment JSONs (recommended):
+
+```bash
+npm run env:print
+npm run env:write
+```
+
 | Variable | Description |
 |---|---|
 | `RPC_URL` | Anvil HTTP endpoint |
 | `NOFEESWAP` | Nofeeswap core contract |
+| `NOFEESWAP_DELEGATEE` | Delegatee (from `anvil-core.json`; informational in `.env`) |
 | `OPERATOR` | Operator (unlock target) |
 | `TOKEN0` / `TOKEN1` | Sorted mock ERC20 addresses |
-| `ATTACKER_PRIVATE_KEY` | Anvil account #1 private key |
+| `ATTACKER_PRIVATE_KEY` | Bot signer — default Anvil **#1** in generated `.env`; override when running `env:write` |
 | `MIN_PROFIT_WEI` | Skip sandwiches below this threshold |
 | `POLL_INTERVAL_MS` | Mempool poll frequency |

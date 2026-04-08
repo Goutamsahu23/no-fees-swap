@@ -239,7 +239,17 @@ Sources for addresses: `core/deployments/anvil-core.json`, `core/deployments/anv
 
 ### 4. Configure the sandwich bot (optional)
 
-Edit **`backend-script/.env`**: set `RPC_URL`, contract addresses, `TOKEN0` / `TOKEN1`, and `ATTACKER_PRIVATE_KEY`. After each deploy, align addresses with `core/deployments/*.json` and `operator/deployments/*.json`. See `backend-script/README.md` for variable descriptions.
+From **`backend-script/`**, after contracts are deployed:
+
+```bash
+cd backend-script
+npm run env:print
+npm run env:write
+```
+
+This writes **`backend-script/.env`** from `core/deployments/anvil-core.json`, `anvil-tokens.json`, and `operator/deployments/anvil-operator.json`. Override **`ATTACKER_PRIVATE_KEY`** in your shell when running `env:write` if you do not want the default Anvil account **#1** key.
+
+See **`backend-script/README.md`** for manual `.env` fields and bot behavior.
 
 ---
 
@@ -410,6 +420,8 @@ Use this to catch type and build errors before demos.
 | `no-fee-swap-ui/` | `npm run env:print` | Print `NEXT_PUBLIC_*` from deployment JSONs |
 | `no-fee-swap-ui/` | `npm run env:write` | Write `.env.local` from deployment JSONs |
 | `no-fee-swap-ui/` | `npm run build` | Production build |
+| `backend-script/` | `npm run env:print` | Print bot `.env` lines from deployment JSONs |
+| `backend-script/` | `npm run env:write` | Write `backend-script/.env` from deployment JSONs |
 | `backend-script/` | `npm run setup` | Anvil: auto-mine off + fund attacker |
 | `backend-script/` | `npm run dev` | Run sandwich bot |
 | `core/` | `brownie run deploy_core --network anvil` | Deploy core (see `scripts/deploy_core.py`) |

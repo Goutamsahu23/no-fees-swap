@@ -7,7 +7,9 @@
     "build": "tsc",
     "start": "node --experimental-specifier-resolution=node dist/index.js",
     "dev": "tsx src/index.ts",
-    "setup": "tsx src/setup.ts"
+    "setup": "tsx src/setup.ts",
+    "env:print": "node scripts/print-env-from-deployments.mjs",
+    "env:write": "node scripts/print-env-from-deployments.mjs --write"
   },
   "dependencies": {
     "viem": "^2.27.0",
