@@ -23,6 +23,188 @@ Deployment JSON files (addresses for Anvil) are written under:
 
 ---
 
+## Step-by-step: clone → running
+
+Follow these in order. (Deeper detail on Brownie, submodules, and troubleshooting appears in later sections.)
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/Goutamsahu23/no-fees-swap.git
+cd no-fees-swap
+```
+
+Use your real remote URL if the account or repo name differs.
+
+### 2. Install tools (once per machine)
+
+| Tool | Notes |
+|------|--------|
+| **Node.js** (LTS) + **npm** | For `no-fee-swap-ui` and `backend-script` |
+| **Python 3.10+** | For Brownie |
+| **Brownie** | `pip install eth-brownie` inside a venv (recommended) |
+| **Foundry** (`anvil`) | Local chain on `http://127.0.0.1:8545` |
+| **MetaMask** | Browser wallet for the UI |
+
+Verify:
+
+```bash
+node -v
+npm -v
+python --version
+brownie --version
+anvil --version
+```
+
+### 3. Python venv + Brownie (contracts)
+
+**Windows (cmd / PowerShell):**
+
+```bat
+cd path\to\no-fees-swap
+python -m venv .venv
+.venv\Scripts\activate
+pip install eth-brownie
+```
+
+**macOS / Linux:**
+
+```bash
+cd /path/to/no-fees-swap
+python3 -m venv .venv
+source .venv/bin/activate
+pip install eth-brownie
+```
+
+If `core/requirements.txt` exists in your tree:
+
+```bash
+cd core
+pip install -r requirements.txt
+cd ..
+```
+
+### 4. Compile contracts
+
+```bash
+cd core
+brownie compile
+cd ../operator
+brownie compile
+cd ..
+```
+
+### 5. Install JavaScript dependencies
+
+```bash
+cd no-fee-swap-ui
+npm install
+cd ../backend-script
+npm install
+cd ..
+```
+
+### 6. Start Anvil (keep this terminal open)
+
+```bash
+anvil --base-fee 0
+```
+
+- **RPC:** `http://127.0.0.1:8545`
+- **Chain id:** `31337`
+
+Plain `anvil` also works.
+
+### 7. Deploy contracts (new terminal, venv active)
+
+Run again **every time you restart Anvil** (chain state resets).
+
+**Windows:**
+
+```bat
+cd path\to\no-fees-swap\core
+brownie run deploy_core --network anvil
+brownie run deploy_tokens --network anvil
+cd ..\operator
+brownie run deploy_operator --network anvil
+cd ..
+```
+
+**macOS / Linux:**
+
+```bash
+cd /path/to/no-fees-swap/core
+brownie run deploy_core --network anvil
+brownie run deploy_tokens --network anvil
+cd ../operator
+brownie run deploy_operator --network anvil
+cd ..
+```
+
+This writes `core/deployments/anvil-core.json`, `anvil-tokens.json`, and `operator/deployments/anvil-operator.json`.
+
+### 8. Configure env files (recommended: generators)
+
+**UI — `no-fee-swap-ui/.env.local`**
+
+Reads the same deployment JSONs and fills all `NEXT_PUBLIC_*` variables:
+
+```bash
+cd no-fee-swap-ui
+npm run env:print
+npm run env:write
+```
+
+- `env:print` — print lines to the terminal  
+- `env:write` — write **`no-fee-swap-ui/.env.local`** (gitignored)
+
+Manual fallback: `copy .env.example .env.local` (Windows) or `cp .env.example .env.local` (macOS/Linux), then paste addresses from the JSON files.
+
+**Sandwich bot (optional) — `backend-script/.env`**
+
+```bash
+cd ../backend-script
+npm run env:print
+npm run env:write
+```
+
+- Default **`ATTACKER_PRIVATE_KEY`** is Anvil account **#1**; override when generating:  
+  `set ATTACKER_PRIVATE_KEY=0x...` then `npm run env:write` (Windows), or  
+  `ATTACKER_PRIVATE_KEY=0x... npm run env:write` (Unix).
+
+### 9. MetaMask
+
+- Add network **31337**, RPC **`http://127.0.0.1:8545`**
+- Import or use an **Anvil** account (keys are printed when `anvil` starts)
+
+### 10. Run the UI
+
+```bash
+cd no-fee-swap-ui
+npm run dev
+```
+
+Open **http://localhost:3000** → **Connect** → in order:
+
+1. Initialize pool  
+2. Approve token0 and token1  
+3. Mint liquidity  
+4. Swap  
+
+### 11. (Optional) Sandwich bot — mempool testing
+
+With Anvil still running:
+
+```bash
+cd backend-script
+npm run setup
+npm run dev
+```
+
+Then submit a **swap from the UI**. After `setup`, **auto-mine is off** so txs stay pending long enough for the bot to see them.
+
+---
+
 ## Get the code — NoFeeSwap `core` and `operator`
 
 The Brownie packages come from the **NoFeeSwap** organization on GitHub. If you do **not** already have them, clone both repositories **next to each other** (folder names must be `core` and `operator` so the paths in this README match):
@@ -212,44 +394,11 @@ If `brownie` is missing, install per [Brownie docs](https://eth-brownie.readthed
 
 ### 3. Configure the UI environment
 
-After **deploying** contracts (so the JSON files exist), from **`no-fee-swap-ui/`**:
-
-**Recommended — generate `.env.local` from deployment files:**
-
-```bash
-cd no-fee-swap-ui
-npm run env:print
-npm run env:write
-```
-
-- `env:print` — prints all `NEXT_PUBLIC_*` lines (and RPC / chain id) to the terminal.
-- `env:write` — writes the same content to **`.env.local`** (gitignored).
-
-Optional RPC override: `set RPC_URL=http://127.0.0.1:8545` (Windows) or `RPC_URL=... npm run env:print` (Unix).
-
-**Manual —** copy the template and edit addresses:
-
-```bash
-copy .env.example .env.local
-```
-
-(On macOS/Linux: `cp .env.example .env.local`.)
-
-Sources for addresses: `core/deployments/anvil-core.json`, `core/deployments/anvil-tokens.json`, `operator/deployments/anvil-operator.json`.
+See **Step-by-step → §8 Configure env files** (`npm run env:print` / `npm run env:write` in `no-fee-swap-ui/`).
 
 ### 4. Configure the sandwich bot (optional)
 
-From **`backend-script/`**, after contracts are deployed:
-
-```bash
-cd backend-script
-npm run env:print
-npm run env:write
-```
-
-This writes **`backend-script/.env`** from `core/deployments/anvil-core.json`, `anvil-tokens.json`, and `operator/deployments/anvil-operator.json`. Override **`ATTACKER_PRIVATE_KEY`** in your shell when running `env:write` if you do not want the default Anvil account **#1** key.
-
-See **`backend-script/README.md`** for manual `.env` fields and bot behavior.
+See **Step-by-step → §8** (backend) and **§11**. Details: **`backend-script/README.md`**.
 
 ---
 
