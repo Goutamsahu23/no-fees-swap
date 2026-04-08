@@ -1,0 +1,11 @@
+{
+  "network": "anvil",
+  "chainId": 31337,
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "token0": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  "token1": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "tag0": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
+  "tag1": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+  "operatorApproved": true
+}

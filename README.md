@@ -44,6 +44,128 @@ The TypeScript mempool / sandwich bot lives in **`backend-script/`**. It runs **
 
 ---
 
+## Contracts: Brownie, not Hardhat (Phase 5 / coursework notes)
+
+Some instructions mention **`npx hardhat compile`** under `core/` and `operator/`. **In this stack those folders are Brownie projects** (`brownie-config.yaml`, `contracts/`, `scripts/`). There is **no** `hardhat.config.*` here, so Hardhat will not compile anything unless you add your own config.
+
+| Instead of | Use |
+|------------|-----|
+| `npx hardhat compile` | `brownie compile` (from `core/` or `operator/`) |
+| Vague “run deploy” | The exact `brownie run …` lines below (same names as in the script headers) |
+
+---
+
+## Get `core` / `operator` into this tree
+
+### Option A — Git submodules (parent repo tracks pointers)
+
+If the **parent** repository defines `core` and `operator` as submodules, initialize them after clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+Shallow fetch (optional, smaller download):
+
+```bash
+git submodule update --init --recursive --depth 1
+```
+
+If you cloned the parent without submodules, you may need:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Option B — Plain clones (no submodule)
+
+Use the two `git clone https://github.com/NoFeeSwap/...` commands in the section above, and place `core/` and `operator/` next to `no-fee-swap-ui/` and `backend-script/`.
+
+---
+
+## Python / Brownie one-time setup (contracts)
+
+Use a virtual environment so `brownie` and dependencies do not pollute your system Python.
+
+**Windows (PowerShell or cmd):**
+
+```bat
+cd E:\no-fee-swap-test
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install eth-brownie
+```
+
+**macOS / Linux:**
+
+```bash
+cd /path/to/no-fee-swap-test
+python3 -m venv .venv
+source .venv/bin/activate
+pip install eth-brownie
+```
+
+If your checkout of **NoFeeSwap/core** includes a `requirements.txt`, also run (from `core/`):
+
+```bash
+pip install -r requirements.txt
+```
+
+(Not all tags include that file; `eth-brownie` is the minimum you need for `brownie compile` and deploy scripts.)
+
+**Compile both packages:**
+
+```bash
+cd core
+brownie compile
+cd ../operator
+brownie compile
+```
+
+---
+
+## Anvil (local node)
+
+The deploy scripts’ docstrings recommend a zero base fee for simple local testing:
+
+```bash
+anvil --base-fee 0
+```
+
+Plain `anvil` also works with this repo’s `brownie-config.yaml` **anvil** network (`http://127.0.0.1:8545`, chain id **31337**). Keep one Anvil process running for the whole session.
+
+---
+
+## Deploy contracts (matches script headers)
+
+Run from the **same machine** as Anvil, **after** `brownie compile` in each folder. Order matters: **core → tokens → operator**.
+
+**Windows paths:**
+
+```bat
+cd E:\no-fee-swap-test\core
+brownie run deploy_core --network anvil
+brownie run deploy_tokens --network anvil
+cd E:\no-fee-swap-test\operator
+brownie run deploy_operator --network anvil
+```
+
+**macOS / Linux:**
+
+```bash
+cd /path/to/no-fee-swap-test/core
+brownie run deploy_core --network anvil
+brownie run deploy_tokens --network anvil
+cd /path/to/no-fee-swap-test/operator
+brownie run deploy_operator --network anvil
+```
+
+These names match the comments at the top of `core/scripts/deploy_core.py`, `core/scripts/deploy_tokens.py`, and `operator/scripts/deploy_operator.py`. Some Brownie versions also accept the long form, e.g. `brownie run scripts/deploy_core.py --network anvil`; use whichever your `brownie --help` lists.
+
+After deploy, copy addresses from `core/deployments/*.json` and `operator/deployments/*.json` into `no-fee-swap-ui/.env.local` (and `backend-script/.env` if you use the bot).
+
+---
+
 ## Prerequisites
 
 Install these before you start:
@@ -84,17 +206,9 @@ cd backend-script && npm install && cd ..
 
 ### 2. Install Python / Brownie dependencies
 
-From each Solidity package (follow any project-specific `requirements.txt` or Brownie docs you use). Typical pattern:
+See **Python / Brownie one-time setup** and **Compile both packages** above (venv + `pip install eth-brownie` + optional `requirements.txt` + `brownie compile` in `core/` and `operator/`).
 
-```bash
-cd core
-brownie compile
-cd ../operator
-brownie compile
-cd ..
-```
-
-If dependencies are missing, install Brownie per [official docs](https://eth-brownie.readthedocs.io/en/stable/install.html) and ensure solc matches the project.
+If `brownie` is missing, install per [Brownie docs](https://eth-brownie.readthedocs.io/en/stable/install.html) and ensure the compiler version in `brownie-config.yaml` (e.g. solc **0.8.28**) can be fetched.
 
 ### 3. Configure the UI environment
 
@@ -130,10 +244,10 @@ Use **separate terminals**. Order matters: **Anvil → deploy → UI** (and opti
 ### Terminal A — Anvil
 
 ```bash
-anvil
+anvil --base-fee 0
 ```
 
-Keep it running. Default RPC: `http://127.0.0.1:8545`, chain id **31337**.
+Keep it running. Default RPC: `http://127.0.0.1:8545`, chain id **31337**. You can use plain `anvil` if you prefer.
 
 > **Sandwich bot testing:** run `backend-script`’s `npm run setup` once per Anvil session so **auto-mine is off** and the mempool stays visible to the bot (see `backend-script/README.md`).
 
@@ -141,12 +255,14 @@ Keep it running. Default RPC: `http://127.0.0.1:8545`, chain id **31337**.
 
 **Important:** Redeploy whenever you restart Anvil (state is wiped).
 
+Same commands as **Deploy contracts** above (short form):
+
 ```bash
 cd core
-brownie run scripts/deploy_core.py --network anvil
-brownie run scripts/deploy_tokens.py --network anvil
+brownie run deploy_core --network anvil
+brownie run deploy_tokens --network anvil
 cd ../operator
-brownie run scripts/deploy_operator.py --network anvil
+brownie run deploy_operator --network anvil
 cd ..
 ```
 
@@ -274,6 +390,7 @@ Use this to catch type and build errors before demos.
 | UI shows wrong “Connect” state | Hard refresh; ensure `mounted` gating in UI (no SSR/client mismatch) |
 | Transactions fail immediately | Same Anvil session as deploy? Addresses in `.env.local` match JSON? |
 | `brownie` network errors | `brownie-config.yaml` `anvil` host `127.0.0.1:8545`, chain id 31337 |
+| `npx hardhat compile` fails | Expected: use **`brownie compile`** in `core/` and `operator/` (Brownie projects, not Hardhat) |
 | Too many Git repos in Cursor sidebar | Reload window after pulling `.vscode/settings.json`; nested `lib/` repos are ignored for scanning |
 | `node_modules` in Git | Ensure root `.gitignore` is used; do not commit `node_modules` |
 
@@ -287,9 +404,10 @@ Use this to catch type and build errors before demos.
 | `no-fee-swap-ui/` | `npm run build` | Production build |
 | `backend-script/` | `npm run setup` | Anvil: auto-mine off + fund attacker |
 | `backend-script/` | `npm run dev` | Run sandwich bot |
-| `core/` | `brownie run scripts/deploy_core.py --network anvil` | Deploy core |
-| `core/` | `brownie run scripts/deploy_tokens.py --network anvil` | Deploy mock ERC20s |
-| `operator/` | `brownie run scripts/deploy_operator.py --network anvil` | Deploy operator |
+| `core/` | `brownie run deploy_core --network anvil` | Deploy core (see `scripts/deploy_core.py`) |
+| `core/` | `brownie run deploy_tokens --network anvil` | Deploy mock ERC20s |
+| `operator/` | `brownie run deploy_operator --network anvil` | Deploy operator |
+| `core/` / `operator/` | `brownie run scripts/deploy_*.py --network anvil` | Longer form if your Brownie version requires it |
 
 ---
 

@@ -1,6 +1,5 @@
 # --- Folders you keep out of this repo (upstream clones) ---
-core/
-operator/
+
 
 # --- Node (any package) ---
 node_modules/
@@ -28,11 +27,14 @@ venv/
 .venv/
 env/
 
-# --- Solidity / Brownie (if ever tracked under UI/bot) ---
+# --- Solidity / Brownie ---
 **/artifacts/
 **/cache/
 **/.brownie/
 **/reports/
+# Explicit (some Git versions do not ignore nested build/ reliably)
+core/build/
+operator/build/
 
 # --- Env & secrets ---
 .env
