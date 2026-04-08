@@ -212,24 +212,30 @@ If `brownie` is missing, install per [Brownie docs](https://eth-brownie.readthed
 
 ### 3. Configure the UI environment
 
+After **deploying** contracts (so the JSON files exist), from **`no-fee-swap-ui/`**:
+
+**Recommended — generate `.env.local` from deployment files:**
+
 ```bash
 cd no-fee-swap-ui
+npm run env:print
+npm run env:write
+```
+
+- `env:print` — prints all `NEXT_PUBLIC_*` lines (and RPC / chain id) to the terminal.
+- `env:write` — writes the same content to **`.env.local`** (gitignored).
+
+Optional RPC override: `set RPC_URL=http://127.0.0.1:8545` (Windows) or `RPC_URL=... npm run env:print` (Unix).
+
+**Manual —** copy the template and edit addresses:
+
+```bash
 copy .env.example .env.local
 ```
 
-On macOS/Linux use `cp .env.example .env.local`.
+(On macOS/Linux: `cp .env.example .env.local`.)
 
-Edit **`.env.local`**:
-
-- `NEXT_PUBLIC_RPC_URL` — `http://127.0.0.1:8545`
-- `NEXT_PUBLIC_CHAIN_ID` — `31337`
-- `NEXT_PUBLIC_NOFEESWAP`, `NEXT_PUBLIC_NOFEESWAP_DELEGATEE`, `NEXT_PUBLIC_OPERATOR`, `NEXT_PUBLIC_TOKEN0`, `NEXT_PUBLIC_TOKEN1`
-
-After you deploy (next section), copy addresses from:
-
-- `core/deployments/anvil-core.json`
-- `core/deployments/anvil-tokens.json`
-- `operator/deployments/anvil-operator.json`
+Sources for addresses: `core/deployments/anvil-core.json`, `core/deployments/anvil-tokens.json`, `operator/deployments/anvil-operator.json`.
 
 ### 4. Configure the sandwich bot (optional)
 
@@ -401,6 +407,8 @@ Use this to catch type and build errors before demos.
 | Location | Command | Purpose |
 |----------|---------|---------|
 | `no-fee-swap-ui/` | `npm run dev` | Dev server |
+| `no-fee-swap-ui/` | `npm run env:print` | Print `NEXT_PUBLIC_*` from deployment JSONs |
+| `no-fee-swap-ui/` | `npm run env:write` | Write `.env.local` from deployment JSONs |
 | `no-fee-swap-ui/` | `npm run build` | Production build |
 | `backend-script/` | `npm run setup` | Anvil: auto-mine off + fund attacker |
 | `backend-script/` | `npm run dev` | Run sandwich bot |

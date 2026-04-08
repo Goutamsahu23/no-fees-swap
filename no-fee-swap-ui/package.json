@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "env:print": "node scripts/print-env-from-deployments.mjs",
+    "env:write": "node scripts/print-env-from-deployments.mjs --write"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.96.2",
