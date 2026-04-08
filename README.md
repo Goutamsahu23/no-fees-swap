@@ -46,6 +46,22 @@ Use your real remote URL if the account or repo name differs.
 | **Foundry** (`anvil`) | Local chain on `http://127.0.0.1:8545` |
 | **MetaMask** | Browser wallet for the UI |
 
+Install Foundry (for `anvil`) if it is not already installed:
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://foundry.paradigm.xyz | iex
+foundryup
+```
+
+**macOS / Linux:**
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+
 Verify:
 
 ```bash
