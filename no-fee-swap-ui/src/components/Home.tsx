@@ -490,6 +490,17 @@ export default function Home() {
     setPendingPoolSave(false);
 
     const snapBal = { ...balanceSnapshotRef.current };
+    const txHash = hash;
+
+    // Show success immediately; balance deltas require refetch (extra RPC round-trips).
+    const quickLines: string[] = [
+      `poolId (salted): ${pid.toString()}`,
+      `unsaltedPoolId: ${up.toString()}`,
+      "Pool state saved in this browser for mint / burn / swap.",
+      "Refreshing token balances…",
+    ];
+    if (txHash) quickLines.push(`tx: ${txHash}`);
+    setBanner({ variant: "success", title: "Pool initialized", lines: quickLines });
 
     void (async () => {
       const gen = txGenerationRef.current;
@@ -506,7 +517,7 @@ export default function Home() {
       const t1 = deltaLine(sym1Label, snapBal.b1, n1, d1);
       if (t0) lines.push(t0);
       if (t1) lines.push(t1);
-      if (hash) lines.push(`tx: ${hash}`);
+      if (txHash) lines.push(`tx: ${txHash}`);
       setBanner({ variant: "success", title: "Pool initialized", lines });
     })();
 
@@ -546,6 +557,26 @@ export default function Home() {
       swap: "Swap executed",
     };
 
+    const title = titles[action];
+    const txHash = hash;
+
+    const quickLines: string[] = [];
+    if (action === "approve0") {
+      quickLines.push(`Operator can spend ${sym0Label} up to max allowance.`);
+    } else if (action === "approve1") {
+      quickLines.push(`Operator can spend ${sym1Label} up to max allowance.`);
+    } else if (action === "mint") {
+      quickLines.push("Liquidity added for the tick range you specified.");
+    } else if (action === "burn") {
+      quickLines.push("Liquidity removed for the tick range you specified.");
+    } else if (action === "swap") {
+      quickLines.push("Swap completed through the operator unlock path.");
+    }
+    quickLines.push("Refreshing token balances…");
+    if (txHash) quickLines.push(`tx: ${txHash}`);
+    setBanner({ variant: "success", title, lines: quickLines });
+    resetWrite();
+
     void (async () => {
       const gen = txGenerationRef.current;
       const [r0, r1] = await Promise.all([refetchBal0(), refetchBal1()]);
@@ -570,14 +601,13 @@ export default function Home() {
       const t1 = deltaLine(sym1Label, snapBal.b1, n1, d1);
       if (t0) lines.push(t0);
       if (t1) lines.push(t1);
-      if (hash) lines.push(`tx: ${hash}`);
+      if (txHash) lines.push(`tx: ${txHash}`);
 
       setBanner({
         variant: "success",
-        title: titles[action],
+        title,
         lines,
       });
-      resetWrite();
     })();
   }, [
     receipt,
